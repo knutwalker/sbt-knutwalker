@@ -37,7 +37,7 @@ import ScalacOptions._
 // TODO:
 //  - versions like scalazVersion
 //    - adding resolvers and libraryDependencies
-//    - confirable with module lists (e.g. "core", "effect", ...)
+//    - configurable with module lists (e.g. "core", "effect", ...)
 //  - make releasesteps configurable
 object KSbtPlugin extends AutoPlugin {
 
@@ -51,6 +51,21 @@ object KSbtPlugin extends AutoPlugin {
          publishLocal := (),
       publishArtifact := false
     )
+
+    type Github = de.knutwalker.sbt.Github
+    val Github = de.knutwalker.sbt.Github
+
+    type Developer = de.knutwalker.sbt.Developer
+    val Developer = de.knutwalker.sbt.Developer
+
+    type ScalacOptions = de.knutwalker.sbt.ScalacOptions
+    val ScalacOptions = de.knutwalker.sbt.ScalacOptions
+
+    type ScalaMainVersion = de.knutwalker.sbt.ScalaMainVersion
+    val ScalaMainVersion = de.knutwalker.sbt.ScalaMainVersion
+
+    type JavaVersion = de.knutwalker.sbt.JavaVersion
+    val JavaVersion = de.knutwalker.sbt.JavaVersion
   }
 
   import autoImport._
@@ -67,14 +82,14 @@ object KSbtPlugin extends AutoPlugin {
     scalaMainVersion := ScalaMainVersion(scalaBinaryVersion.value),
          javaVersion := JavaVersion.Java18,
          scalacFlags := {
-           Lint and GoodMeasure and SimpleWarnings and Utf8 and LanguageFeature.All and
-             EliminateDeadCode and DisallowUnunsedCode and DisallowInferredAny and
-             DisallowAdaptedArgs and DisallowNumericWidening
+           Lint and GoodMeasure and SimpleWarnings and Utf8 and LanguageFeature.Existentials and
+             LanguageFeature.HigherKinds and LanguageFeature.ImplicitConversions and
+             EliminateDeadCode and DisallowInferredAny and DisallowAdaptedArgs and
+             DisallowNumericWidening
          }
   ) ++ derivedSettings ++ compilerSettings ++ pomRelatedSettings ++ publishSettings
 
   lazy val derivedSettings: Seq[Def.Setting[_]] = List(
-            scalaVersion := "2.11.6",
     organizationHomepage := githubProject.?.value.map(_.organization),
                 homepage := githubProject.?.value.map(_.repository),
              shellPrompt := { state => configurePrompt(state) },
