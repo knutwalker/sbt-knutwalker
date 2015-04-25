@@ -1,10 +1,26 @@
+/*
+ * Copyright 2015 Paul Horn
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.knutwalker.sbt
 
 import sbt._
 import sbt.Keys._
 import scala.xml.{Node => XNode, NodeSeq => XNodeSeq}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
-import de.heikoseeberger.sbtheader.{HeaderPlugin, AutomateHeaderPlugin}
+import de.heikoseeberger.sbtheader.HeaderPlugin
 import de.heikoseeberger.sbtheader.license.Apache2_0
 import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import org.scoverage.coveralls.CoverallsPlugin
@@ -12,17 +28,17 @@ import scoverage.ScoverageSbtPlugin
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.ReleaseStep
+import sbtrelease.{Version, ReleaseStep}
 import xerial.sbt.Sonatype._
 import xerial.sbt.Sonatype.SonatypeKeys.sonatypeReleaseAll
 
+import ScalacOptions._
 
 // TODO:
 //  - versions like scalazVersion
 //    - adding resolvers and libraryDependencies
 //    - confirable with module lists (e.g. "core", "effect", ...)
 //  - make releasesteps configurable
-//  - make scalac options configurable
 object KSbtPlugin extends AutoPlugin {
 
   override def trigger = allRequirements
@@ -45,36 +61,49 @@ object KSbtPlugin extends AutoPlugin {
    inConfig(Test)(headerSettings)
 
   lazy val ksbtSettings: Seq[Def.Setting[_]] = List(
-     maintainer := organizationName.value,
-     githubDevs := Seq.empty,
-    releaseThis := true
-  ) ++ derivedSettings ++ compilerSettings ++ publishSettings
+          maintainer := organizationName.value,
+          githubDevs := githubProject.?.value.map(gh ⇒ Developer(gh.org, maintainer.value)).toList,
+         releaseThis := true,
+    scalaMainVersion := ScalaMainVersion(scalaBinaryVersion.value),
+         javaVersion := JavaVersion.Java18,
+         scalacFlags := {
+           Lint and GoodMeasure and SimpleWarnings and Utf8 and LanguageFeature.All and
+             EliminateDeadCode and DisallowUnunsedCode and DisallowInferredAny and
+             DisallowAdaptedArgs and DisallowNumericWidening
+         }
+  ) ++ derivedSettings ++ compilerSettings ++ pomRelatedSettings ++ publishSettings
 
   lazy val derivedSettings: Seq[Def.Setting[_]] = List(
+            scalaVersion := "2.11.6",
     organizationHomepage := githubProject.?.value.map(_.organization),
-                homepage := githubProject.?.value.map(_.user),
+                homepage := githubProject.?.value.map(_.repository),
              shellPrompt := { state => configurePrompt(state) },
              logBuffered := false,
-                licenses := List("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-          pomPostProcess := { (node) => rewriteTransformer.transform(node).head },
-                pomExtra := pomExtra.value ++ extraPom(githubProject.?.value, githubDevs.value),
    libraryDependencies <++= (scalaBinaryVersion, akkaVersion.?, luceneVersion.?, nettyVersion.?, rxJavaVersion.?, rxScalaVersion.?, shapelessVersion.?, scalazVersion.?) apply addLibrary,
-             resolvers <++= (scalazVersion.?) apply addResolvers,
+             resolvers <++= scalazVersion.? apply addResolvers,
          cleanKeepFiles ++= List("resolution-cache", "streams").map(target.value / _),
-           updateOptions ~= (_.withCachedResolution(true))
+           updateOptions ~= (_.withCachedResolution(cachedResoluton = true))
+  )
+
+  lazy val pomRelatedSettings: Seq[Def.Setting[_]] = List(
+           scmInfo := githubProject.?.value.map(_.scmInfo),
+          licenses := List("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+        developers := sbtDevelopers(sbtVersion.value, githubDevs.value),
+    pomPostProcess := { (node) => rewriteTransformer.transform(node).head },
+          pomExtra := pomExtra.value ++ makePomExtra(sbtVersion.value, githubDevs.value)
   )
 
   lazy val compilerSettings: Seq[Def.Setting[_]] = List(
-               scalacOptions in Compile := scalacCompileOptions(scalaBinaryVersion.value),
+               scalacOptions in Compile := ScalacOptions(scalacFlags.value, scalaMainVersion.value, javaVersion.value),
     scalacOptions in (Compile, console) ~= (_ filterNot (x => x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
        scalacOptions in (Test, console) ~= (_ filterNot (x => x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
                   scalacOptions in Test += "-Yrangepos"
   )
 
   lazy val headerSettings: Seq[Def.Setting[_]] = {
-    import HeaderPlugin.autoImport.headers
+    import HeaderPlugin.autoImport.{headers, createHeaders}
     List(
-      compile := compile.dependsOn(HeaderPlugin.autoImport.createHeaders).value,
+      compile := compile.dependsOn(createHeaders).value,
       headers <<= (startYear, maintainer) apply headerConfig
     )
   }
@@ -87,7 +116,7 @@ object KSbtPlugin extends AutoPlugin {
       publishArtifact in Test := false,
                    tagComment := s"Release version ${version.value}",
                 commitMessage := s"Set version to ${version.value}",
-                  versionBump := sbtrelease.Version.Bump.Bugfix,
+                  versionBump := Version.Bump.Bugfix,
                releaseProcess := List[ReleaseStep](
         checkSnapshotDependencies,
         inquireVersions,
@@ -109,44 +138,35 @@ object KSbtPlugin extends AutoPlugin {
     val thisYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
     val years = List(year.getOrElse(thisYear), thisYear).distinct.mkString(" – ")
     Map("java"  -> Apache2_0(years, maintainer),
-        "scala" -> Apache2_0(years, maintainer))
+        "scala" -> Apache2_0(years, maintainer),
+        "conf"  -> Apache2_0(years, maintainer, "#"))
   }
 
-  private def scalacCompileOptions(cross: String) = {
-    val crossOpts = cross match {
-      case "2.11" => List(
-        "-Xlint:_",
-        "-Yconst-opt",
-        "-Ywarn-infer-any",
-        "-Ywarn-unused",
-        "-Ywarn-unused-import")
-      case _      => List(
-        "-Xlint")
-    }
-    crossOpts ++ List(
-      "-deprecation",
-      "-encoding",  "UTF-8",
-      "-feature",
-      "-language:_",
-      // "-optimise",
-      "-unchecked",
-      "-target:jvm-1.7",
-      "-Xcheckinit",
-      "-Xfatal-warnings",
-      "-Xfuture",
-      "-Yclosure-elim",
-      "-Ydead-code",
-      // "-Yinline",
-      "-Yno-adapted-args",
-      // "-Yinline-handlers",
-      // "-Yinline-warnings",
-      "-Ywarn-adapted-args",
-      "-Ywarn-dead-code",
-      "-Ywarn-inaccessible",
-      "-Ywarn-nullary-override",
-      "-Ywarn-nullary-unit",
-      "-Ywarn-numeric-widen")
+  def sbtDevelopers(sbtv: String, devs: Seq[Developer]): List[sbt.Developer] = {
+    if (checkSbtVersionIsAtMost(sbtv, 0, 13, 8)) Nil
+    else devs.map(_.sbtDev).toList
   }
+
+  def makePomExtra(sbtv: String, devs: Seq[Developer]) = {
+    if (devs.isEmpty || checkSbtVersionIsGreaterThan(sbtv, 0, 13, 8))
+      XNodeSeq.Empty
+    else
+      <developers>{devs.map { d =>
+        <developer>
+          <id>{d.id}</id>
+          <name>{d.name}</name>
+          <url>{d.url}</url>
+        </developer>
+      }}</developers>
+  }
+
+  def checkSbtVersionIsAtMost(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean = {
+    val sbt = Version(sbtv)
+    sbt.exists(v ⇒ v.major == major && v.minor.exists(_ <= minor) && v.bugfix.exists(_ <= bugfix))
+  }
+
+  def checkSbtVersionIsGreaterThan(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean =
+    !checkSbtVersionIsAtMost(sbtv, major, minor, bugfix)
 
   private def addLibrary(cross: String,
       akka: Option[String],
@@ -177,15 +197,6 @@ object KSbtPlugin extends AutoPlugin {
     val name = Project.extract(st).currentRef.project
     val color = GREEN
     (if (name == "parent") "" else s"[$color$name$RESET] ") + "> "
-  }
-
-  private def extraPom(g: Option[Github], devs: Seq[Developer]) = {
-    val developerInfo = if (devs.nonEmpty)
-      <developers>{devs.map(_.pomExtra)}</developers>
-    else
-      XNodeSeq.Empty
-    val scmInfo = g.fold(XNodeSeq.Empty)(_.pomExtra)
-    scmInfo ++ developerInfo
   }
 
   private val rewriteRule = new RewriteRule {

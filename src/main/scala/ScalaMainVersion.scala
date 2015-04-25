@@ -15,29 +15,22 @@
  */
 
 package de.knutwalker.sbt
-import sbt.URL
 
-case class Developer(id: String, name: String, identity: Developer.Identity = Developer.Github) {
+sealed abstract class ScalaMainVersion(val cross: String)
+object ScalaMainVersion {
+  case object Scala210 extends ScalaMainVersion("2.10")
+  case object Scala211 extends ScalaMainVersion("2.11")
+  case object Scala212 extends ScalaMainVersion("2.12")
+  case object Unknown extends ScalaMainVersion("")
 
-  def url: URL =
-    sbt.url(identity.url(id))
-
-  def sbtDev: sbt.Developer =
-    sbt.Developer(id, name, "", url)
-}
-
-object Developer {
-  def apply(id: String): Developer =
-    new Developer(id, id)
-
-
-  sealed trait Identity { def url(id: String): String }
-
-  case object Github extends Identity {
-    def url(id: String) = s"https://github.com/$id/"
+  def apply(cross: String): ScalaMainVersion = cross match {
+    case "2.12" ⇒ Scala212
+    case "2.11" ⇒ Scala211
+    case "2.10" ⇒ Scala210
+    case _      ⇒ Unknown
   }
 
-  case object Twitter extends Identity {
-    def url(id: String) = s"https://twitter.com/$id/"
-  }
+  def unapply(s: ScalaMainVersion): Option[String] =
+    if (s == Unknown) None
+    else Some(s.cross)
 }
