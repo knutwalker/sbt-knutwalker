@@ -54,7 +54,7 @@ Add the folling to you `project/plugins.sbt`
 ```scala
 resolvers += Resolver.url("knutwalker-sbt-plugins", url("https://dl.bintray.com/knutwalker/sbt-plugins"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.1.0-d0d980329cb1d15f71631ce2b3b7d6d5e1bbbd78")
+addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.1.0")
 ```
 
 The following keys should be used to activate various features and simplicifications
