@@ -29,6 +29,7 @@ libraryDependencies ++= List(
   "org.typelevel"              %% "scalaz-specs2"             % "0.4.0"  % "test"
     exclude("org.specs2", s"specs2-core${scalaBinaryVersion.value}")
     exclude("org.specs2", s"specs2-scalacheck${scalaBinaryVersion.value}"))
+resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases"
 
 addSbtPlugin("org.scoverage"     % "sbt-coveralls" % "1.0.0.BETA1")
 addSbtPlugin("de.heikoseeberger" % "sbt-header"    % "1.5.0")

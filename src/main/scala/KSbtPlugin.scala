@@ -66,9 +66,15 @@ object KSbtPlugin extends AutoPlugin {
 
     type JavaVersion = de.knutwalker.sbt.JavaVersion
     val JavaVersion = de.knutwalker.sbt.JavaVersion
+
+    type Library = de.knutwalker.sbt.Library
+    val Library = de.knutwalker.sbt.Library
   }
 
-  import autoImport._
+  import autoImport.{
+    maintainer, githubDevs, releaseThis, scalaMainVersion,
+    javaVersion, libraries, scalacFlags, githubProject
+  }
 
   override lazy val projectSettings =
    ksbtSettings ++
@@ -81,6 +87,7 @@ object KSbtPlugin extends AutoPlugin {
          releaseThis := true,
     scalaMainVersion := ScalaMainVersion(scalaBinaryVersion.value),
          javaVersion := JavaVersion.Java18,
+           libraries := Nil,
          scalacFlags := {
            Lint and GoodMeasure and SimpleWarnings and Utf8 and LanguageFeature.Existentials and
              LanguageFeature.HigherKinds and LanguageFeature.ImplicitConversions and
@@ -94,8 +101,8 @@ object KSbtPlugin extends AutoPlugin {
                 homepage := githubProject.?.value.map(_.repository),
              shellPrompt := { state => configurePrompt(state) },
              logBuffered := false,
-   libraryDependencies <++= (scalaBinaryVersion, akkaVersion.?, luceneVersion.?, nettyVersion.?, rxJavaVersion.?, rxScalaVersion.?, shapelessVersion.?, scalazVersion.?) apply addLibrary,
-             resolvers <++= scalazVersion.? apply addResolvers,
+    libraryDependencies ++= libraries.value.flatMap(_.libraries),
+//             resolvers <++= scalazVersion.? apply addResolvers,
          cleanKeepFiles ++= List("resolution-cache", "streams").map(target.value / _),
            updateOptions ~= (_.withCachedResolution(cachedResoluton = true))
   )
@@ -183,29 +190,11 @@ object KSbtPlugin extends AutoPlugin {
   def checkSbtVersionIsGreaterThan(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean =
     !checkSbtVersionIsAtMost(sbtv, major, minor, bugfix)
 
-  private def addLibrary(cross: String,
-      akka: Option[String],
-      lucene: Option[String],
-      netty: Option[String],
-      rxJava: Option[String],
-      rxScala: Option[String],
-      shapeless: Option[String],
-      scalaz: Option[String]) = {
-
-    akka.toList.flatMap(Dependencies.akka) ++
-    lucene.toList.flatMap(Dependencies.lucene) ++
-    netty.toList.flatMap(Dependencies.netty) ++
-    rxJava.toList.flatMap(Dependencies.rxJava) ++
-    rxScala.toList.flatMap(Dependencies.rxScala) ++
-    shapeless.toList.flatMap(Dependencies.shapeless) ++
-    scalaz.toList.flatMap(Dependencies.scalaz)
-  }
-
-  private def addResolvers(scalaz: Option[String]) =
-    scalaz match {
-      case Some(_) => List("Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases")
-      case None    => Nil
-    }
+//  private def addResolvers(scalaz: Option[String]) =
+//    scalaz match {
+//      case Some(_) => List("Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases")
+//      case None    => Nil
+//    }
 
   private def configurePrompt(st: State) = {
     import scala.Console._

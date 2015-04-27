@@ -41,29 +41,7 @@ trait KSbtKeys {
   lazy val javaVersion =
     settingKey[JavaVersion]("Java version (target)")
 
-  lazy val projectName =
-    settingKey[String]("umbrella project name")
-
-  lazy val akkaVersion =
-    settingKey[String]("Version of Akka")
-
-  lazy val luceneVersion =
-    settingKey[String]("Version of Lucene")
-
-  lazy val nettyVersion =
-    settingKey[String]("Version of Netty")
-
-  lazy val rxJavaVersion =
-    settingKey[String]("Version of RxJava")
-
-  lazy val rxScalaVersion =
-    settingKey[String]("Version of RxScala")
-
-  lazy val shapelessVersion =
-    settingKey[String]("Version of Shapeless")
-
-  lazy val scalazVersion =
-    settingKey[String]("Version of Scalaz")
-
+  lazy val libraries =
+    settingKey[Seq[Library]]("A set of libraries to use")
 }
 object KSbtKeys extends KSbtKeys
