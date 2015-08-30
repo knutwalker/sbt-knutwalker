@@ -14,22 +14,22 @@ me there, you might benefit from this plugin, too.
 
 As a meta-plugin, the following plugins are automatically included
 
-- [sbt-release](https://github.com/sbt/sbt-release/) 0.8.5
+- [sbt-release](https://github.com/sbt/sbt-release/) 1.0.0
   Provides a customizable workflow for releases
 
-- [sbt-sonatype](https://github.com/xerial/sbt-sonatype) 0.2.2
+- [sbt-sonatype](https://github.com/xerial/sbt-sonatype) 0.5.1
   Provides support for Sonatype
 
-- [sbt-pgp](https://github.com/sbt/sbt-pgp) 0.8.3
-  For signing artefacts when publishing to sonatype
+- [sbt-pgp](https://github.com/sbt/sbt-pgp) 1.0.0
+  For signing artifacts when publishing to sonatype
 
 - [sbt-header](https://github.com/sbt/sbt-header) 1.5.0
   For creating and maintaining license headers
 
-- [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.0.4
+- [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.2.0
   For running statement and branch coverage
 
-- [sbt-coveralls](https://github.com/scoverage/sbt-coveralls) 1.0.0.BETA1
+- [sbt-coveralls](https://github.com/scoverage/sbt-coveralls) 1.0.0
   For uploading coverage data to coveralls.io
 
 Further, these things are provided or simplified
@@ -52,9 +52,7 @@ Further, these things are provided or simplified
 Add the folling to you `project/plugins.sbt`
 
 ```scala
-resolvers += Resolver.url("knutwalker-sbt-plugins", url("https://dl.bintray.com/knutwalker/sbt-plugins"))(Resolver.ivyStylePatterns)
-
-addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.1.0")
+addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.2.0")
 ```
 
 The following keys should be used to activate various features and simplicifications
