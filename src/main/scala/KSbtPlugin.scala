@@ -22,15 +22,13 @@ import scala.xml.{Node => XNode, NodeSeq => XNodeSeq}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import de.heikoseeberger.sbtheader.HeaderPlugin
 import de.heikoseeberger.sbtheader.license.Apache2_0
-import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import org.scoverage.coveralls.CoverallsPlugin
 import scoverage.ScoverageSbtPlugin
-import sbtrelease.ReleasePlugin._
-import sbtrelease.ReleasePlugin.ReleaseKeys._
+import sbtrelease.ReleasePlugin
+import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.{Version, ReleaseStep}
-import xerial.sbt.Sonatype._
-import xerial.sbt.Sonatype.SonatypeKeys.sonatypeReleaseAll
+import sbtrelease.Version
+import xerial.sbt.Sonatype.sonatypeSettings
 
 import ScalacOptions._
 
@@ -124,14 +122,14 @@ object KSbtPlugin extends AutoPlugin {
   }
 
   lazy val publishSettings: Seq[Def.Setting[_]] =
-    releaseSettings ++ sonatypeSettings ++ List(
+    ReleasePlugin.projectSettings ++ sonatypeSettings ++ List(
               //        publish <<= releaseThis map { r => if (r) publish.value else () },
               //   publishLocal <<= releaseThis map { r => if (r) publishLocal.value else () },
               // publishArtifact := releaseThis.value,
       publishArtifact in Test := false,
-                   tagComment := s"Release version ${version.value}",
-                commitMessage := s"Set version to ${version.value}",
-                  versionBump := Version.Bump.Bugfix,
+            releaseTagComment := s"Release version ${version.value}",
+         releaseCommitMessage := s"Set version to ${version.value}",
+           releaseVersionBump := Version.Bump.Bugfix,
                releaseProcess := List[ReleaseStep](
         checkSnapshotDependencies,
         inquireVersions,
@@ -223,22 +221,13 @@ object KSbtPlugin extends AutoPlugin {
 
   private val rewriteTransformer = new RuleTransformer(rewriteRule)
 
-  private lazy val publishSignedArtifacts = publishArtifacts.copy(
-    action = { state =>
-      val extracted = Project extract state
-      val ref = extracted get thisProjectRef
-      extracted.runAggregated(publishSigned in Global in ref, state)
-    },
+  private lazy val publishSignedArtifacts = ReleaseStep(
+    action = Command.process("publishSigned", _),
     enableCrossBuild = true
   )
 
-  private lazy val releaseToCentral = ReleaseStep(
-    action = { state =>
-      val extracted = Project extract state
-      val ref = extracted get thisProjectRef
-      extracted.runAggregated(sonatypeReleaseAll in Global in ref, state)
-    },
+  private lazy val releaseToCentral =ReleaseStep(
+    action = Command.process("sonatypeReleaseAll", _),
     enableCrossBuild = true
   )
-
 }
