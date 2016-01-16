@@ -40,9 +40,10 @@ object KScalaFlags {
   private def flagsFor11 = Seq(
     "-Xlint:_",
     "-Yconst-opt",
-    "-Ywarn-infer-any",
-    "-Ywarn-unused",
-    "-Ywarn-unused-import"
+    "-Ywarn-infer-any"
+    // unused reports are too aggressive, imho
+    // "-Ywarn-unused",
+    // "-Ywarn-unused-import"
   )
 
   private def universalFlags = Seq(
