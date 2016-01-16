@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Paul Horn
+ * Copyright 2015 – 2016 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,32 +18,31 @@ package de.knutwalker.sbt
 
 import sbt._
 import sbt.Keys._
-import scala.xml.{Node => XNode, NodeSeq => XNodeSeq}
-import scala.xml.transform.{RewriteRule, RuleTransformer}
-import de.heikoseeberger.sbtheader.HeaderPlugin
-import de.heikoseeberger.sbtheader.license.Apache2_0
-import com.typesafe.sbt.pgp.PgpKeys.publishSigned
-import org.scoverage.coveralls.CoverallsPlugin
-import scoverage.ScoverageSbtPlugin
-import sbtrelease.ReleasePlugin._
-import sbtrelease.ReleasePlugin.ReleaseKeys._
+import com.typesafe.sbt.SbtGhPages.GhPagesKeys.ghpagesNoJekyll
+import com.typesafe.sbt.SbtGhPages.ghpages
+import com.typesafe.sbt.SbtGit
+import com.typesafe.sbt.SbtGit.{ GitKeys, git }
+import com.typesafe.sbt.SbtSite.SiteKeys._
+import com.typesafe.sbt.SbtSite.site
+import com.typesafe.sbt.git.JGit
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifacts
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{headers, createHeaders}
+import sbtassembly.AssemblyKeys._
+import sbtdocker.DockerKeys._
+import sbtdocker.{ ImageName, Dockerfile }
+import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.{Version, ReleaseStep}
-import xerial.sbt.Sonatype._
-import xerial.sbt.Sonatype.SonatypeKeys.sonatypeReleaseAll
+import sbtrelease.Version
+import sbtunidoc.Plugin.UnidocKeys._
+import sbtunidoc.Plugin.{ ScalaUnidoc, unidocSettings }
+import spray.revolver.RevolverPlugin.autoImport.{reStart, reStop, reStatus}
+import tut.Plugin._
 
-import ScalacOptions._
 
-// TODO:
-//  - versions like scalazVersion
-//    - adding resolvers and libraryDependencies
-//    - configurable with module lists (e.g. "core", "effect", ...)
-//  - make releasesteps configurable
 object KSbtPlugin extends AutoPlugin {
-
   override def trigger = allRequirements
-
-  override def requires = plugins.JvmPlugin && HeaderPlugin && ScoverageSbtPlugin && CoverallsPlugin
+  override def requires = plugins.JvmPlugin
 
   object autoImport extends KSbtKeys {
     lazy val dontRelease: Seq[Def.Setting[_]] = List(
@@ -58,187 +57,181 @@ object KSbtPlugin extends AutoPlugin {
     type Developer = de.knutwalker.sbt.Developer
     val Developer = de.knutwalker.sbt.Developer
 
-    type ScalacOptions = de.knutwalker.sbt.ScalacOptions
-    val ScalacOptions = de.knutwalker.sbt.ScalacOptions
-
     type ScalaMainVersion = de.knutwalker.sbt.ScalaMainVersion
     val ScalaMainVersion = de.knutwalker.sbt.ScalaMainVersion
 
     type JavaVersion = de.knutwalker.sbt.JavaVersion
     val JavaVersion = de.knutwalker.sbt.JavaVersion
-  }
 
-  import autoImport._
+    lazy val RunDebug = config("debug") extend Runtime
+
+    def tutsSettings(projects: ProjectReference*) =
+      unidocSettings ++ site.settings ++ ghpages.settings ++ tutSettings ++ dontRelease ++ Seq(
+        tutSourceDirectory := sourceDirectory.value / "tut",
+        buildReadmeContent := tut.value,
+        readmeFile := baseDirectory.value / ".." / "README.md",
+        readmeCommitMessage := "Update README",
+        unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(projects: _*),
+        site.addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), "api"),
+        site.addMappingsToSiteDir(tut, "tut"),
+        site.addMappingsToSiteDir(genModules, "_data"),
+        ghpagesNoJekyll := false,
+        scalacOptions in (ScalaUnidoc, unidoc) ++= Seq(
+          "-doc-source-url", scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
+          "-sourcepath", baseDirectory.in(LocalRootProject).value.getAbsolutePath,
+          "-doc-title", githubProject.value.repo,
+          "-doc-version", version.value,
+          "-diagrams",
+          "-groups"
+        ),
+        git.remoteRepo := githubProject.value.remoteSsh,
+        includeFilter in makeSite ~= (_ || "*.yml" || "*.md" || "*.scss"),
+        tutScalacOptions ~= (_.filterNot(Set("-Xfatal-warnings", "-Ywarn-unused-import", "-Ywarn-dead-code"))),
+        watchSources <++= (tutSourceDirectory, siteSourceDirectory, includeFilter in makeSite) map { (t, s, f) ⇒ (t ** "*.md").get ++ (s ** f).get }
+      )
+
+    def parentSettings(additional: SettingsDefinition*): Seq[Def.Setting[_]] = (Seq(
+      name                        := projectName.value,
+      applicationPorts            := Seq(),
+      applicationJavaOpts         := Seq(),
+      aggregate in assembly       := false,
+      aggregate in reStart        := false,
+      aggregate in reStop         := false,
+      aggregate in reStatus       := false,
+      assemblyJarName in assembly := { if (isSnapshot.value) s"${projectName.value}.jar" else s"${projectName.value}-${version.value}.jar" },
+      assemblyOption in assembly  := {
+       val mem = applicationJvmHeap.?.value.getOrElse("1g")
+       val args = (applicationJavaOpts.value ++ Seq(s"-Xms$mem", s"-Xmx$mem")).mkString(" ")
+       val prev = (assemblyOption in assembly).value
+       prev.copy(prependShellScript = Some(Seq("#!/usr/bin/env sh", s"exec java $args -jar" + """ "$0" "$@"""")))
+     }
+    ) ++ additional).flatMap(_.settings)
+
+    def dockerSettings(additional: Def.Setting[_]*): SettingsDefinition = Seq(
+      name                         := projectName.value,
+      applicationPorts             := Seq(),
+      applicationJavaOpts          := Seq(),
+      docker                      <<= (docker dependsOn assembly),
+      imageNames in docker := {
+        val base = ImageName(
+          registry = None,
+          namespace = Some(organization.value),
+          repository = projectName.value,
+          tag = Some(version.value)
+        )
+        Seq(base, base.copy(tag = None))
+      },
+      dockerfile in docker := {
+        val jarFile = (assemblyOutputPath in assembly).value
+        val mainclass = (mainClass in assembly).value.getOrElse(sys.error("assembly:mainClass must be set"))
+        val appPath = "/app"
+        val jarTarget = s"$appPath/${jarFile.name}"
+        val confTarget = s"$appPath/conf"
+        val dataTarget = s"$appPath/data"
+        val jvmHeap = applicationJvmHeap.?.value.getOrElse("1g")
+        val javaOpts = applicationJavaOpts.value
+        val exposed = applicationPorts.value
+        new Dockerfile {
+          from("martinseeler/oracle-server-jre:1.8_66")
+          env("JVM_HEAP", jvmHeap)
+          env("JAVA_OPTS", javaOpts.mkString(" "))
+          env("JVM_ARGS", "")
+          add(jarFile, jarTarget)
+          run("mkdir", confTarget)
+          volume(confTarget, dataTarget)
+          workDir(appPath)
+          expose(exposed: _*)
+          entryPointShell("exec", "java", "-cp", s"$confTarget:$jarTarget", "$JAVA_OPTS", "-Xms${JVM_HEAP}", "-Xmx${JVM_HEAP}", "$JVM_ARGS", mainclass)
+        }
+      }
+    ) ++ additional
+  }
+  import KCode._, KReleaseSteps._, KTut._
+  import autoImport.{Github => _, Developer => _, ScalaMainVersion => _, JavaVersion => _, _}
 
   override lazy val projectSettings =
-   ksbtSettings ++
-   inConfig(Compile)(headerSettings) ++
-   inConfig(Test)(headerSettings)
+    pluginSettings ++ orgaSettings ++ compilerSettings ++
+    docsSettings ++ releaseSettings ++ miscSettings
 
-  lazy val ksbtSettings: Seq[Def.Setting[_]] = List(
-          maintainer := organizationName.value,
-          githubDevs := githubProject.?.value.map(gh ⇒ Developer(gh.org, maintainer.value)).toList,
-         releaseThis := true,
-    scalaMainVersion := ScalaMainVersion(scalaBinaryVersion.value),
-         javaVersion := JavaVersion.Java18,
-         scalacFlags := {
-           Lint and GoodMeasure and SimpleWarnings and Utf8 and LanguageFeature.Existentials and
-             LanguageFeature.HigherKinds and LanguageFeature.ImplicitConversions and
-             EliminateDeadCode and DisallowInferredAny and DisallowAdaptedArgs and
-             DisallowNumericWidening
-         }
-  ) ++ derivedSettings ++ compilerSettings ++ pomRelatedSettings ++ publishSettings
+  override lazy val buildSettings =
+    SbtGit.versionWithGit
 
-  lazy val derivedSettings: Seq[Def.Setting[_]] = List(
-    organizationHomepage := githubProject.?.value.map(_.organization),
-                homepage := githubProject.?.value.map(_.repository),
-             shellPrompt := { state => configurePrompt(state) },
-             logBuffered := false,
-   libraryDependencies <++= (scalaBinaryVersion, akkaVersion.?, luceneVersion.?, nettyVersion.?, rxJavaVersion.?, rxScalaVersion.?, shapelessVersion.?, scalazVersion.?) apply addLibrary,
-             resolvers <++= scalazVersion.? apply addResolvers,
-         cleanKeepFiles ++= List("resolution-cache", "streams").map(target.value / _),
-           updateOptions ~= (_.withCachedResolution(cachedResoluton = true))
+  override lazy val projectConfigurations =
+    List(RunDebug)
+
+  lazy val orgaSettings = Seq(
+                    name := s"${projectName.value}-${thisProject.value.id}",
+              maintainer := organizationName.value,
+              githubDevs := githubProject.?.value.map(gh ⇒ Developer(gh.org, maintainer.value)).toSeq,
+    organizationHomepage := Some(githubProject.value.organization),
+                homepage := Some(githubProject.value.repository)
   )
 
-  lazy val pomRelatedSettings: Seq[Def.Setting[_]] = List(
-           scmInfo := githubProject.?.value.map(_.scmInfo),
-          licenses := List("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-        developers := sbtDevelopers(sbtVersion.value, githubDevs.value),
-    pomPostProcess := { (node) => rewriteTransformer.transform(node).head },
-          pomExtra := pomExtra.value ++ makePomExtra(sbtVersion.value, githubDevs.value)
-  )
-
-  lazy val compilerSettings: Seq[Def.Setting[_]] = List(
-               scalacOptions in Compile := ScalacOptions(scalacFlags.value, scalaMainVersion.value, javaVersion.value),
+  lazy val compilerSettings = Seq(
+                       scalaMainVersion := ScalaMainVersion(scalaBinaryVersion.value),
+                            javaVersion := JavaVersion.Java18,
+               experimentalJava8Support := false,
+    scalacOptions in Compile            := KScalaFlags(scalaMainVersion.value, javaVersion.value, experimentalJava8Support.value),
+    scalacOptions in    Test           ++= Seq("-Xcheckinit", "-Yrangepos"),
     scalacOptions in (Compile, console) ~= (_ filterNot (x => x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
-       scalacOptions in (Test, console) ~= (_ filterNot (x => x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
-                  scalacOptions in Test += "-Yrangepos"
+    scalacOptions in    (Test, console) ~= (_ filterNot (x => x == "-Xfatal-warnings" || x.startsWith("-Ywarn")))
   )
 
-  lazy val headerSettings: Seq[Def.Setting[_]] = {
-    import HeaderPlugin.autoImport.{headers, createHeaders}
-    List(
-      compile := compile.dependsOn(createHeaders).value,
-      headers <<= (startYear, maintainer) apply headerConfig
+  lazy val docsSettings = Seq(
+     autoAPIMappings := true,
+    latestVersionTag := GitKeys.gitReader.value.withGit(g ⇒ findLatestVersion(g.asInstanceOf[JGit])),
+       latestVersion := latestVersionTag.value.getOrElse(version.value),
+          genModules := generateModules(state.value, sourceManaged.value, streams.value.cacheDirectory, thisProject.value.dependencies),
+          makeReadme := mkReadme(state.value, buildReadmeContent.?.value.getOrElse(Nil), readmeFile.?.value, readmeFile.?.value),
+        commitReadme := addAndCommitReadme(state.value, makeReadme.value, readmeCommitMessage.?.value, releaseVcs.value),
+            pomExtra := pomExtra.value ++ makePomExtra(sbtVersion.value, githubDevs.value) ++
+              <properties>
+                <info.apiURL>http://{githubProject.value.org}.github.io/{githubProject.value.repo}/api/</info.apiURL>
+              </properties>
+  )
+
+  lazy val releaseSettings = Seq(
+                    scmInfo := githubProject.?.value.map(_.scmInfo),
+                   licenses := List("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+                 developers := sbtDevelopers(sbtVersion.value, githubDevs.value),
+             pomPostProcess := { (node) => removeScoverage.transform(node).head },
+          previousArtifacts := latestVersionTag.value.map(v ⇒ organization.value %% name.value % v).filter(_ ⇒ publishArtifact.value).toSet,
+    publishArtifact in Test := false,
+          releaseTagComment := s"Release version ${version.value}",
+       releaseCommitMessage := s"Set version to ${version.value}",
+         releaseVersionBump := Version.Bump.Bugfix,
+             releaseProcess := List[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      runTest,
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      publishSignedArtifacts,
+      releaseToCentral,
+      pushGithubPages,
+      commitTheReadme,
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
     )
-  }
-
-  lazy val publishSettings: Seq[Def.Setting[_]] =
-    releaseSettings ++ sonatypeSettings ++ List(
-              //        publish <<= releaseThis map { r => if (r) publish.value else () },
-              //   publishLocal <<= releaseThis map { r => if (r) publishLocal.value else () },
-              // publishArtifact := releaseThis.value,
-      publishArtifact in Test := false,
-                   tagComment := s"Release version ${version.value}",
-                commitMessage := s"Set version to ${version.value}",
-                  versionBump := Version.Bump.Bugfix,
-               releaseProcess := List[ReleaseStep](
-        checkSnapshotDependencies,
-        inquireVersions,
-        runClean,
-        runTest,
-        setReleaseVersion,
-        commitReleaseVersion,
-        tagRelease,
-        publishSignedArtifacts,
-        releaseToCentral,
-        setNextVersion,
-        commitNextVersion,
-        pushChanges,
-        publishArtifacts
-      )
-    )
-
-  private def headerConfig(year: Option[Int], maintainer: String) = {
-    val thisYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-    val years = List(year.getOrElse(thisYear), thisYear).distinct.mkString(" – ")
-    Map("java"  -> Apache2_0(years, maintainer),
-        "scala" -> Apache2_0(years, maintainer),
-        "conf"  -> Apache2_0(years, maintainer, "#"))
-  }
-
-  def sbtDevelopers(sbtv: String, devs: Seq[Developer]): List[sbt.Developer] = {
-    if (checkSbtVersionIsAtMost(sbtv, 0, 13, 8)) Nil
-    else devs.map(_.sbtDev).toList
-  }
-
-  def makePomExtra(sbtv: String, devs: Seq[Developer]) = {
-    if (devs.isEmpty || checkSbtVersionIsGreaterThan(sbtv, 0, 13, 8))
-      XNodeSeq.Empty
-    else
-      <developers>{devs.map { d =>
-        <developer>
-          <id>{d.id}</id>
-          <name>{d.name}</name>
-          <url>{d.url}</url>
-        </developer>
-      }}</developers>
-  }
-
-  def checkSbtVersionIsAtMost(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean = {
-    val sbt = Version(sbtv)
-    sbt.exists(v ⇒ v.major == major && v.minor.exists(_ <= minor) && v.bugfix.exists(_ <= bugfix))
-  }
-
-  def checkSbtVersionIsGreaterThan(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean =
-    !checkSbtVersionIsAtMost(sbtv, major, minor, bugfix)
-
-  private def addLibrary(cross: String,
-      akka: Option[String],
-      lucene: Option[String],
-      netty: Option[String],
-      rxJava: Option[String],
-      rxScala: Option[String],
-      shapeless: Option[String],
-      scalaz: Option[String]) = {
-
-    akka.toList.flatMap(Dependencies.akka) ++
-    lucene.toList.flatMap(Dependencies.lucene) ++
-    netty.toList.flatMap(Dependencies.netty) ++
-    rxJava.toList.flatMap(Dependencies.rxJava) ++
-    rxScala.toList.flatMap(Dependencies.rxScala) ++
-    shapeless.toList.flatMap(Dependencies.shapeless) ++
-    scalaz.toList.flatMap(Dependencies.scalaz)
-  }
-
-  private def addResolvers(scalaz: Option[String]) =
-    scalaz match {
-      case Some(_) => List("Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases")
-      case None    => Nil
-    }
-
-  private def configurePrompt(st: State) = {
-    import scala.Console._
-    val name = Project.extract(st).currentRef.project
-    val color = GREEN
-    (if (name == "parent") "" else s"[$color$name$RESET] ") + "> "
-  }
-
-  private val rewriteRule = new RewriteRule {
-    override def transform(n: XNode): XNodeSeq =
-      if (n.label == "dependency" && (n \ "scope").text == "provided" && (n \ "groupId").text == "org.scoverage")
-        XNodeSeq.Empty
-      else n
-  }
-
-  private val rewriteTransformer = new RuleTransformer(rewriteRule)
-
-  private lazy val publishSignedArtifacts = publishArtifacts.copy(
-    action = { state =>
-      val extracted = Project extract state
-      val ref = extracted get thisProjectRef
-      extracted.runAggregated(publishSigned in Global in ref, state)
-    },
-    enableCrossBuild = true
   )
 
-  private lazy val releaseToCentral = ReleaseStep(
-    action = { state =>
-      val extracted = Project extract state
-      val ref = extracted get thisProjectRef
-      extracted.runAggregated(sonatypeReleaseAll in Global in ref, state)
-    },
-    enableCrossBuild = true
+  lazy val miscSettings = Seq(
+        shellPrompt := { state => configurePrompt(state) },
+        logBuffered := false,
+      updateOptions ~= (_.withCachedResolution(cachedResoluton = true)),
+    cleanKeepFiles ++= Seq("resolution-cache", "streams").map(target.value / _)
   )
 
+  lazy val pluginSettings =
+    mimaDefaultSettings ++
+    inConfig(Compile)(headerSettings) ++
+    inConfig(Test)(headerSettings)
+
+  lazy val headerSettings = Seq(
+    compile := compile.dependsOn(createHeaders).value,
+    headers <<= (startYear, maintainer) apply headerConfig
+  )
 }
