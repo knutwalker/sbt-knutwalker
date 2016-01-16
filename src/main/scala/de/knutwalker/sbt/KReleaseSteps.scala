@@ -29,8 +29,7 @@ object KReleaseSteps {
 
   lazy val inquireVersions = ReleaseStep { st: State ⇒
     val extracted = Project.extract(st)
-    val jgit = extracted.get(GitKeys.gitReader).asInstanceOf[JGit]
-    val lastVer = KCode.findLatestVersion(jgit).getOrElse("0.0.0")
+    val lastVer = extracted.get(KSbtKeys.latestVersionTag).getOrElse("0.0.0")
     val bump = extracted.get(releaseVersionBump)
     val suggestedVersion = Version(lastVer).map(_.withoutQualifier.bump(bump).string).getOrElse(versionFormatError)
     val releaseVersion = readVersion(suggestedVersion, "Release version [%s] : ")
