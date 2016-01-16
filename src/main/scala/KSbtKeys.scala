@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Paul Horn
+ * Copyright 2015 – 2016 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,8 @@ trait KSbtKeys {
   lazy val githubDevs =
     settingKey[Seq[Developer]]("Developers of this project")
 
-  lazy val releaseThis =
-    settingKey[Boolean]("True if this project should be released")
-
-  lazy val scalacFlags =
-    settingKey[ScalacOptions]("scalac options in a typely manner")
+  lazy val projectName =
+    settingKey[String]("umbrella project name")
 
   lazy val scalaMainVersion =
     settingKey[ScalaMainVersion]("scala binary version in a typely manner")
@@ -41,29 +38,40 @@ trait KSbtKeys {
   lazy val javaVersion =
     settingKey[JavaVersion]("Java version (target)")
 
-  lazy val projectName =
-    settingKey[String]("umbrella project name")
+  lazy val experimentalJava8Support =
+    settingKey[Boolean]("Whether to enable experimental flags that make Scala interop with Java 8")
 
-  lazy val akkaVersion =
-    settingKey[String]("Version of Akka")
+  lazy val latestVersionTag =
+    settingKey[Option[String]]("The latest tag describing a version number")
 
-  lazy val luceneVersion =
-    settingKey[String]("Version of Lucene")
+  lazy val latestVersion =
+    settingKey[String]("The latest version or the current one, if there is no previous version")
 
-  lazy val nettyVersion =
-    settingKey[String]("Version of Netty")
+  lazy val genModules =
+    taskKey[Seq[(File, String)]]("Generate module files for a tut-guide")
 
-  lazy val rxJavaVersion =
-    settingKey[String]("Version of RxJava")
+  lazy val makeReadme =
+    taskKey[Option[File]]("Generate readme file from tutorial")
 
-  lazy val rxScalaVersion =
-    settingKey[String]("Version of RxScala")
+  lazy val commitReadme =
+    taskKey[Option[File]]("Commit the readme file")
 
-  lazy val shapelessVersion =
-    settingKey[String]("Version of Shapeless")
+  lazy val buildReadmeContent =
+    taskKey[Seq[(File, String)]]("Generate content for the readme file")
 
-  lazy val scalazVersion =
-    settingKey[String]("Version of Scalaz")
+  lazy val readmeFile =
+    settingKey[File]("The readme file to build")
 
+  lazy val readmeCommitMessage =
+    settingKey[String]("The message to commit the readme file with")
+
+  lazy val applicationJvmHeap =
+    settingKey[String]("If run as application, how much heap to start with (e.g. 1g)")
+
+  lazy val applicationPorts =
+    settingKey[Seq[Int]]("If run as application, which ports are exposed")
+
+  lazy val applicationJavaOpts =
+    settingKey[Seq[String]]("If run as application, what are some default jvm arguments")
 }
 object KSbtKeys extends KSbtKeys

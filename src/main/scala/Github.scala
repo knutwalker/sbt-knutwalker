@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Paul Horn
+ * Copyright 2015 – 2016 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,15 @@ case class Github(org: String, repo: String) {
   def organization: URL =
     url(s"https://github.com/$org/")
 
+  def remoteSsh: String =
+    s"git@github.com:$org/$repo.git"
+
+  def remoteHttp: String =
+    s"github.com/$org/$repo.git"
+
   def scmInfo: ScmInfo = ScmInfo(
     repository,
-    s"scm:git:https://github.com/$org/$repo.git",
-    Some(s"scm:git:ssh://git@github.com:$org/$repo.git")
+    s"scm:git:https://$remoteHttp",
+    Some(s"scm:git:ssh://$remoteSsh")
   )
 }

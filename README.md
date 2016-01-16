@@ -12,33 +12,67 @@ me there, you might benefit from this plugin, too.
 
 ## What you get
 
-As a meta-plugin, the following plugins are automatically included
+As a meta-plugin, the following plugins are automatically included (alphabetical order)
 
-- [sbt-release](https://github.com/sbt/sbt-release/) 1.0.0
-  Provides a customizable workflow for releases
+- [sbt-assembly](https://github.com/sbt/sbt-assembly) 0.14.1
+  Build fat-jars for your application
 
-- [sbt-sonatype](https://github.com/xerial/sbt-sonatype) 0.5.1
-  Provides support for Sonatype
+- [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) 0.5.0
+  Generate code based on your `build.sbt`
+  
+- [sbt-docker](https://github.com/marcuslonnberg/sbt-docker) 1.2.0
+  Generate docker images for your application
+  
+- [sbt-ghpages](https://github.com/sbt/sbt-ghpages) 0.5.4
+  Push documentation and static content to github pages
+  
+- [sbt-git](https://github.com/sbt/sbt-git) 0.8.5
+  Versioning based on git
+
+- [sbt-header](https://github.com/sbt/sbt-header) 1.5.1
+  For creating and maintaining license headers
+
+- [sbt-jmh](https://github.com/ktoso/sbt-jmh) 0.2.6
+  Trust no one, bench everything
+  
+- [sbt-mima-plugin](https://github.com/typesafehub/migration-manager/wiki/Sbt-plugin) 0.1.8
+  Check for binary compability
 
 - [sbt-pgp](https://github.com/sbt/sbt-pgp) 1.0.0
   For signing artifacts when publishing to sonatype
 
-- [sbt-header](https://github.com/sbt/sbt-header) 1.5.0
-  For creating and maintaining license headers
+- [sbt-release](https://github.com/sbt/sbt-release) 1.0.0
+  Provides a customizable workflow for releases
 
-- [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.2.0
+- [sbt-revolver](https://github.com/spray/sbt-revolver) 0.8.0
+  quickly restart your application
+
+- [sbt-sonatype](https://github.com/xerial/sbt-sonatype) 1.1
+  Provides support for Sonatype
+
+- [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.3.5
   For running statement and branch coverage
 
-- [sbt-coveralls](https://github.com/scoverage/sbt-coveralls) 1.0.0
-  For uploading coverage data to coveralls.io
+- [sbt-site](https://github.com/sbt/sbt-site) 0.8.2
+  Generate static content for documentation (and github pages)
+  
+- [tut-plugin](https://github.com/tpolecat/tut) 0.4.1
+  Compile and check your documentation
+  
+- [sbt-unidoc](https://github.com/sbt/sbt-unidoc) 0.3.3
+  Generate unified documentation across multiple projects
+
+Not all of these are configured (e.g. docker), they're just included so you don't
+have to add them to the `plugins.sbt`. Also, some of those are targeted at libraries
+while others are targeted at applications. Future versions might make a distinction there.
+
+
 
 Further, these things are provided or simplified
 
 - simpler releasing to sonatype
 - Apache License with automatic license header creation
 - [useful scalac flags](http://tpolecat.github.io/2014/04/11/scalac-flags.html)
-- better configurable scalac flags in general, with support for differences of scala versions (cross compiler flags, so to speak)
-- some simpler library management
 - more aggresive resolver caching to avoid [repeated resolving...](https://twitter.com/datazenit/status/585540351978536962/photo/1)
 
 
@@ -52,7 +86,7 @@ Further, these things are provided or simplified
 Add the folling to you `project/plugins.sbt`
 
 ```scala
-addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.2.0")
+addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.3.0")
 ```
 
 The following keys should be used to activate various features and simplicifications
