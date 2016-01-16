@@ -3,7 +3,7 @@ import de.heikoseeberger.sbtheader.license.Apache2_0
 enablePlugins(AutomateHeaderPlugin, GitVersioning, GitBranchPrompt)
 sbtPlugin := true
 
-git.baseVersion := "0.3.0"
+git.baseVersion := "0.4.0"
 organization := "de.knutwalker"
 
 name := "sbt-knutwalker"
