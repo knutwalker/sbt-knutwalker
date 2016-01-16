@@ -118,27 +118,6 @@ A list of developers that will be included in the generated pom for
 sonatype releasing.
 It also workarounds a bug in pom generation in sbt 0.13.8
 
-##### `scalacFlags`
-
-A typely alternative to scalacOptions that allows logical grouping and
-combination of some scalac options. Also, these options can abstract
-over the differences in various scalas versions.
-
-For example, the default scalacOptions are defined as
-
-```scala
-scalacFlags := {
-  Lint and GoodMeasure and SimpleWarnings and Utf8 and
-  LanguageFeature.Existentials and LanguageFeature.HigherKinds and
-  LanguageFeature.ImplicitConversions and EliminateDeadCode and
-  DisallowInferredAny and DisallowAdaptedArgs and
-  DisallowNumericWidening
-}
-```
-
-and `Lint` would set `-Xlint:_` in Scala 2.11 and `-Xlint` in Scala 2.10.
-
-For now, [look at the source, luke](src/main/scala/ScalacOptions.scala).
 
 ##### `javaVersion`
 
