@@ -48,7 +48,10 @@ object KCode extends VersionOrdering {
     else devs.map(_.sbtDev).toList
   }
 
-  def makePomExtra(sbtv: String, devs: Seq[Developer]) = {
+  def makePomExtra(sbtv: String, devs: Seq[Developer], gh: Option[Github]) =
+    makePomDevs(sbtv, devs) ++ makePomApiUrl(gh)
+
+  def makePomDevs(sbtv: String, devs: Seq[Developer]) = {
     if (devs.isEmpty || checkSbtVersionIsGreaterThan(sbtv, 0, 13, 8))
       XNodeSeq.Empty
     else
@@ -59,6 +62,15 @@ object KCode extends VersionOrdering {
           <url>{d.url}</url>
         </developer>
       }}</developers>
+  }
+
+  def makePomApiUrl(gh: Option[Github]) = gh match {
+    case Some(Github(org, repo)) ⇒
+      <properties>
+        <info.apiURL>http://{org}.github.io/{repo}/api/</info.apiURL>
+      </properties>
+    case None ⇒
+      XNodeSeq.Empty
   }
 
   def configurePrompt(st: State) = {

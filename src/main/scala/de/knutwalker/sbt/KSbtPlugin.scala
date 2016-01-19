@@ -163,8 +163,8 @@ object KSbtPlugin extends AutoPlugin {
                     name := s"${projectName.value}-${thisProject.value.id}",
               maintainer := organizationName.value,
               githubDevs := githubProject.?.value.map(gh ⇒ Developer(gh.org, maintainer.value)).toSeq,
-    organizationHomepage := Some(githubProject.value.organization),
-                homepage := Some(githubProject.value.repository)
+    organizationHomepage := githubProject.?.value.map(_.organization),
+                homepage := githubProject.?.value.map(_.repository)
   )
 
   lazy val compilerSettings = Seq(
@@ -184,10 +184,7 @@ object KSbtPlugin extends AutoPlugin {
           genModules := generateModules(state.value, sourceManaged.value, streams.value.cacheDirectory, thisProject.value.dependencies),
           makeReadme := mkReadme(state.value, buildReadmeContent.?.value.getOrElse(Nil), readmeFile.?.value, readmeFile.?.value),
         commitReadme := addAndCommitReadme(state.value, makeReadme.value, readmeCommitMessage.?.value, releaseVcs.value),
-            pomExtra := pomExtra.value ++ makePomExtra(sbtVersion.value, githubDevs.value) ++
-              <properties>
-                <info.apiURL>http://{githubProject.value.org}.github.io/{githubProject.value.repo}/api/</info.apiURL>
-              </properties>
+            pomExtra := pomExtra.value ++ makePomExtra(sbtVersion.value, githubDevs.value, githubProject.?.value)
   )
 
   lazy val releaseSettings = Seq(
