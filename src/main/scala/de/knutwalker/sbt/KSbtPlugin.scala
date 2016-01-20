@@ -132,7 +132,7 @@ object KSbtPlugin extends AutoPlugin {
         val javaOpts = applicationJavaOpts.value
         val exposed = applicationPorts.value
         new Dockerfile {
-          from("martinseeler/oracle-server-jre:1.8_66")
+          from("martinseeler/oracle-server-jre:1.8_72")
           env("JVM_HEAP", jvmHeap)
           env("JAVA_OPTS", javaOpts.mkString(" "))
           env("JVM_ARGS", "")
