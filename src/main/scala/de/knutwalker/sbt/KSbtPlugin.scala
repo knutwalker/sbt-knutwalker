@@ -189,7 +189,7 @@ object KSbtPlugin extends AutoPlugin {
 
   lazy val releaseSettings = Seq(
                     scmInfo := githubProject.?.value.map(_.scmInfo),
-                   licenses := List("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+                   licenses := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
                  developers := sbtDevelopers(sbtVersion.value, githubDevs.value),
              pomPostProcess := { (node) => removeScoverage.transform(node).head },
           previousArtifacts := latestVersionTag.value.map(v ⇒ organization.value %% name.value % v).filter(_ ⇒ publishArtifact.value).toSet,
