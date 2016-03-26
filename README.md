@@ -14,13 +14,13 @@ me there, you might benefit from this plugin, too.
 
 As a meta-plugin, the following plugins are automatically included (alphabetical order)
 
-- [sbt-assembly](https://github.com/sbt/sbt-assembly) 0.14.1
+- [sbt-assembly](https://github.com/sbt/sbt-assembly) 0.14.2
   Build fat-jars for your application
 
-- [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) 0.5.0
+- [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) 0.6.1
   Generate code based on your `build.sbt`
   
-- [sbt-docker](https://github.com/marcuslonnberg/sbt-docker) 1.2.0
+- [sbt-docker](https://github.com/marcuslonnberg/sbt-docker) 1.3.0
   Generate docker images for your application
   
 - [sbt-ghpages](https://github.com/sbt/sbt-ghpages) 0.5.4
@@ -35,13 +35,13 @@ As a meta-plugin, the following plugins are automatically included (alphabetical
 - [sbt-jmh](https://github.com/ktoso/sbt-jmh) 0.2.6
   Trust no one, bench everything
   
-- [sbt-mima-plugin](https://github.com/typesafehub/migration-manager/wiki/Sbt-plugin) 0.1.8
+- [sbt-mima-plugin](https://github.com/typesafehub/migration-manager/wiki/Sbt-plugin) 0.1.9
   Check for binary compability
 
 - [sbt-pgp](https://github.com/sbt/sbt-pgp) 1.0.0
   For signing artifacts when publishing to sonatype
 
-- [sbt-release](https://github.com/sbt/sbt-release) 1.0.0
+- [sbt-release](https://github.com/sbt/sbt-release) 1.0.3
   Provides a customizable workflow for releases
 
 - [sbt-revolver](https://github.com/spray/sbt-revolver) 0.8.0
@@ -53,10 +53,10 @@ As a meta-plugin, the following plugins are automatically included (alphabetical
 - [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.3.5
   For running statement and branch coverage
 
-- [sbt-site](https://github.com/sbt/sbt-site) 0.8.2
+- [sbt-site](https://github.com/sbt/sbt-site) 1.0.0
   Generate static content for documentation (and github pages)
   
-- [tut-plugin](https://github.com/tpolecat/tut) 0.4.1
+- [tut-plugin](https://github.com/tpolecat/tut) 0.4.2
   Compile and check your documentation
   
 - [sbt-unidoc](https://github.com/sbt/sbt-unidoc) 0.3.3

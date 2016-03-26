@@ -21,17 +21,22 @@ import sbtrelease.Version
 object VersionOrdering extends VersionOrdering
 trait VersionOrdering {
   implicit val versionOrdering = new Ordering[Version] {
+    @scala.annotation.tailrec
+    private def compareSubversions(vs: List[(Int, Int)]): Int = vs match {
+      case (left, right) :: rest ⇒ left compare right match {
+        case 0 ⇒ compareSubversions(rest)
+        case a ⇒ a
+      }
+      case Nil                   ⇒ 0
+    }
     def compare(x: Version, y: Version): Int =
       x.major compare y.major match {
-        case 0 ⇒ x.minor.getOrElse(0) compare y.minor.getOrElse(0) match {
-          case 0 ⇒ x.bugfix.getOrElse(0) compare y.bugfix.getOrElse(0) match {
-            case 0 ⇒ (x.qualifier, y.qualifier) match {
-              case (None, None) ⇒ 0
-              case (Some(_), Some(_)) ⇒ 0
-              case (None, _) ⇒ 1
-              case (_, None) ⇒ -1
-            }
-            case a ⇒ a
+        case 0 ⇒ compareSubversions(x.subversions.zip(y.subversions)(collection.breakOut)) match {
+          case 0 ⇒ (x.qualifier, y.qualifier) match {
+            case (None, None)       ⇒ 0
+            case (Some(_), Some(_)) ⇒ 0
+            case (None, _)          ⇒ 1
+            case (_, None)          ⇒ -1
           }
           case a ⇒ a
         }

@@ -95,7 +95,9 @@ object KCode extends VersionOrdering {
 
   private def checkSbtVersionIsAtMost(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean = {
     val sbt = Version(sbtv)
-    sbt.exists(v ⇒ v.major == major && v.minor.exists(_ <= minor) && v.bugfix.exists(_ <= bugfix))
+    sbt.exists(v ⇒ v.major == major &&
+                   v.subversions.headOption.exists(_ <= minor) &&
+                   v.subversions.drop(1).headOption.exists(_ <= bugfix))
   }
 
   private def checkSbtVersionIsGreaterThan(sbtv: String, major: Int, minor: Int, bugfix: Int): Boolean =

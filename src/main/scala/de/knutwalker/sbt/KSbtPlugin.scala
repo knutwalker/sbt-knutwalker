@@ -22,10 +22,9 @@ import com.typesafe.sbt.SbtGhPages.GhPagesKeys.ghpagesNoJekyll
 import com.typesafe.sbt.SbtGhPages.ghpages
 import com.typesafe.sbt.SbtGit
 import com.typesafe.sbt.SbtGit.{ GitKeys, git }
-import com.typesafe.sbt.SbtSite.SiteKeys._
-import com.typesafe.sbt.SbtSite.site
+import com.typesafe.sbt.site.SitePlugin.{ autoImport ⇒ site, projectSettings ⇒ siteSettings }
 import com.typesafe.sbt.git.JGit
-import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifacts
+import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{headers, createHeaders}
 import sbtassembly.AssemblyKeys._
@@ -65,16 +64,20 @@ object KSbtPlugin extends AutoPlugin {
 
     lazy val RunDebug = config("debug") extend Runtime
 
-    def tutsSettings(projects: ProjectReference*) =
-      unidocSettings ++ site.settings ++ ghpages.settings ++ tutSettings ++ dontRelease ++ Seq(
+    def tutsSettings(projects: ProjectReference*) = {
+      val apiFolder = settingKey[String]("subdirectory of api folder")
+      val tutFolder = settingKey[String]("subdirectory of tut folder")
+      val dataFolder = settingKey[String]("subdirectory of data folder")
+      unidocSettings ++ siteSettings ++ ghpages.settings ++ tutSettings ++ dontRelease ++ Seq(
+        apiFolder := "api", tutFolder := "tut", dataFolder := "_data",
         tutSourceDirectory := sourceDirectory.value / "tut",
         buildReadmeContent := tut.value,
         readmeFile := baseDirectory.value / ".." / "README.md",
         readmeCommitMessage := "Update README",
         unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(projects: _*),
-        site.addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), "api"),
-        site.addMappingsToSiteDir(tut, "tut"),
-        site.addMappingsToSiteDir(genModules, "_data"),
+        site.addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), apiFolder),
+        site.addMappingsToSiteDir(tut, tutFolder),
+        site.addMappingsToSiteDir(genModules, dataFolder),
         ghpagesNoJekyll := false,
         scalacOptions in (ScalaUnidoc, unidoc) ++= Seq(
           "-doc-source-url", scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
@@ -85,10 +88,11 @@ object KSbtPlugin extends AutoPlugin {
           "-groups"
         ),
         git.remoteRepo := githubProject.value.remoteSsh,
-        includeFilter in makeSite ~= (_ || "*.yml" || "*.md" || "*.scss"),
+        includeFilter in site.makeSite ~= (_ || "*.yml" || "*.md" || "*.scss"),
         tutScalacOptions ~= (_.filterNot(Set("-Xfatal-warnings", "-Ywarn-unused-import", "-Ywarn-dead-code"))),
-        watchSources <++= (tutSourceDirectory, siteSourceDirectory, includeFilter in makeSite) map { (t, s, f) ⇒ (t ** "*.md").get ++ (s ** f).get }
+        watchSources <++= (tutSourceDirectory, site.siteSourceDirectory, includeFilter in site.makeSite) map { (t, s, f) ⇒ (t ** "*.md").get ++ (s ** f).get }
       )
+    }
 
     def parentSettings(additional: SettingsDefinition*): Seq[Def.Setting[_]] = (Seq(
       name                        := projectName.value,
@@ -192,7 +196,7 @@ object KSbtPlugin extends AutoPlugin {
                    licenses := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
                  developers := sbtDevelopers(sbtVersion.value, githubDevs.value),
              pomPostProcess := { (node) => removeScoverage.transform(node).head },
-          previousArtifacts := latestVersionTag.value.map(v ⇒ organization.value %% name.value % v).filter(_ ⇒ publishArtifact.value).toSet,
+      mimaPreviousArtifacts := latestVersionTag.value.map(v ⇒ organization.value %% name.value % v).filter(_ ⇒ publishArtifact.value).toSet,
     publishArtifact in Test := false,
           releaseTagComment := s"Release version ${version.value}",
        releaseCommitMessage := s"Set version to ${version.value}",
