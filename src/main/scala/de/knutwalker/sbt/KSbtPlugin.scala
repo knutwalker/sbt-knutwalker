@@ -203,14 +203,11 @@ object KSbtPlugin extends AutoPlugin {
       runClean,
       runTest,
       setReleaseVersion,
-      commitReleaseVersion,
       tagRelease,
       publishSignedArtifacts,
       releaseToCentral,
       pushGithubPages,
       commitTheReadme,
-      setNextVersion,
-      commitNextVersion,
       pushChanges
     )
   )
