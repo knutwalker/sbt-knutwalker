@@ -16,10 +16,9 @@
 
 package de.knutwalker.sbt
 
-import com.typesafe.sbt.SbtGit.GitKeys
-import com.typesafe.sbt.git.JGit
 import sbt.Keys._
 import sbt._
+import sbt.complete.DefaultParsers
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.{ Version, versionFormatError }
@@ -54,12 +53,12 @@ object KReleaseSteps {
   )
 
   lazy val pushGithubPages = ReleaseStep(
-    action = Command.process("docs/ghpagesPushSite", _),
+    action = optionallyProcess("docs/ghpagesPushSite", _),
     enableCrossBuild = false
   )
 
   lazy val commitTheReadme = ReleaseStep(
-    action = Command.process("docs/commitReadme", _),
+    action = optionallyProcess("docs/commitReadme", _),
     enableCrossBuild = false
   )
 
@@ -69,6 +68,17 @@ object KReleaseSteps {
       case Some("") => ver
       case Some(input) => Version(input).map(_.string).getOrElse(versionFormatError)
       case None => sys.error("No version provided!")
+    }
+  }
+
+  private def optionallyProcess(command: String, state: State): State = {
+    val parser = Command.combine(state.definedCommands)
+    DefaultParsers.parse(command, parser(state)) match {
+      case Right(s)     ⇒
+        s() // apply command.  command side effects happen here
+      case Left(errMsg) ⇒
+        state.log.debug(errMsg)
+        state
     }
   }
 }
