@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2016 Paul Horn
+ * Copyright 2015 – 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,26 @@ package de.knutwalker.sbt
 
 import sbt._
 import sbt.Keys._
-import com.typesafe.sbt.SbtGhPages.GhPagesKeys.ghpagesNoJekyll
-import com.typesafe.sbt.SbtGhPages.ghpages
+import com.typesafe.sbt.sbtghpages.{GhpagesKeys, GhpagesPlugin}
 import com.typesafe.sbt.SbtGit
-import com.typesafe.sbt.SbtGit.{ GitKeys, git }
-import com.typesafe.sbt.site.SitePlugin.{ autoImport ⇒ site, projectSettings ⇒ siteSettings }
+import com.typesafe.sbt.SbtGit.{GitKeys, git}
+import com.typesafe.sbt.site.SitePlugin.{autoImport => site, projectSettings => siteSettings}
 import com.typesafe.sbt.git.JGit
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{headers, createHeaders}
+import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{createHeaders, headers}
 import sbtassembly.AssemblyKeys._
 import sbtdocker.DockerKeys._
-import sbtdocker.{ ImageName, Dockerfile }
+import sbtdocker.{Dockerfile, ImageName}
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Version
-import sbtunidoc.Plugin.UnidocKeys._
-import sbtunidoc.Plugin.{ ScalaUnidoc, unidocSettings }
-import spray.revolver.RevolverPlugin.autoImport.{reStart, reStop, reStatus}
+import sbtunidoc.{ScalaUnidocPlugin, UnidocKeys}
+import spray.revolver.RevolverPlugin.autoImport.{reStart, reStatus, reStop}
 import tut.Plugin._
 
 
-object KSbtPlugin extends AutoPlugin {
+object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
   override def trigger = allRequirements
   override def requires = plugins.JvmPlugin
 
@@ -68,18 +66,18 @@ object KSbtPlugin extends AutoPlugin {
       val apiFolder = settingKey[String]("subdirectory of api folder")
       val tutFolder = settingKey[String]("subdirectory of tut folder")
       val dataFolder = settingKey[String]("subdirectory of data folder")
-      unidocSettings ++ siteSettings ++ ghpages.settings ++ tutSettings ++ dontRelease ++ Seq(
+      ScalaUnidocPlugin.projectSettings ++ siteSettings ++ GhpagesPlugin.projectSettings ++ tutSettings ++ dontRelease ++ Seq(
         apiFolder := "api", tutFolder := "tut", dataFolder := "_data",
         tutSourceDirectory := sourceDirectory.value / "tut",
         buildReadmeContent := tut.value,
         readmeFile := baseDirectory.value / ".." / "README.md",
         readmeCommitMessage := "Update README",
-        unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(projects: _*),
-        site.addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), apiFolder),
+        unidocProjectFilter in (ScalaUnidocPlugin.autoImport.ScalaUnidoc, unidoc) := inProjects(projects: _*),
+        site.addMappingsToSiteDir(mappings in (ScalaUnidocPlugin.autoImport.ScalaUnidoc, packageDoc), apiFolder),
         site.addMappingsToSiteDir(tut, tutFolder),
         site.addMappingsToSiteDir(genModules, dataFolder),
         ghpagesNoJekyll := false,
-        scalacOptions in (ScalaUnidoc, unidoc) ++= Seq(
+        scalacOptions in (ScalaUnidocPlugin.autoImport.ScalaUnidoc, unidoc) ++= Seq(
           "-doc-source-url", scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
           "-sourcepath", baseDirectory.in(LocalRootProject).value.getAbsolutePath,
           "-doc-title", githubProject.value.repo,
@@ -136,7 +134,7 @@ object KSbtPlugin extends AutoPlugin {
         val javaOpts = applicationJavaOpts.value
         val exposed = applicationPorts.value
         new Dockerfile {
-          from("martinseeler/oracle-server-jre:1.8_72")
+          from("martinseeler/oracle-server-jre:1.8_121")
           env("JVM_HEAP", jvmHeap)
           env("JAVA_OPTS", javaOpts.mkString(" "))
           env("JVM_ARGS", "")
