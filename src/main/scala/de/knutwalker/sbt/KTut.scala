@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2016 Paul Horn
+ * Copyright 2015 – 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ object KTut {
     vcs.add(relative) !! log
     val status = vcs.status.!!.trim
     if (status.nonEmpty) {
-      vcs.commit(message) ! log
+      vcs.commit(message, sign = true) ! log
       Some(file)
     } else {
       None
