@@ -35,14 +35,17 @@ object KScalaFlags {
   }
 
   private def flagsFor10 = Seq(
-    "-Xlint"
+    "-Xlint",
+    "-Yclosure-elim",
+    "-Ydead-code"
   )
 
   private def flagsFor11 = Seq(
     "-Xlint:_",
     "-Yconst-opt",
     "-Ywarn-infer-any",
-    "-Yclosure-elim"
+    "-Yclosure-elim",
+    "-Ydead-code"
     // unused reports are too aggressive, imho
     // "-Ywarn-unused",
     // "-Ywarn-unused-import"
@@ -50,7 +53,6 @@ object KScalaFlags {
 
   private def flagsFor12 = Seq(
     "-Xlint:_",
-    "-Yconst-opt",
     "-Ywarn-infer-any"
   )
 
@@ -63,7 +65,6 @@ object KScalaFlags {
     "-unchecked",
     "-Xfatal-warnings",
     "-Xfuture",
-    "-Ydead-code",
     "-Yno-adapted-args",
     "-Ywarn-adapted-args",
     "-Ywarn-dead-code",
