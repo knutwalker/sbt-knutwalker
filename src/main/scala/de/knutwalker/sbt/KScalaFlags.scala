@@ -54,7 +54,7 @@ object KScalaFlags {
   private def flagsFor12 = Seq(
     "-Xlint:_",
     "-Ywarn-infer-any",
-    "opt:l:project"
+    "-opt:l:project"
   )
 
   private def universalFlags = Seq(
