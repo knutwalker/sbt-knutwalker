@@ -86,7 +86,7 @@ Further, these things are provided or simplified
 Add the folling to you `project/plugins.sbt`
 
 ```scala
-addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.5.0")
+addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.5.1")
 ```
 
 The following keys should be used to activate various features and simplicifications

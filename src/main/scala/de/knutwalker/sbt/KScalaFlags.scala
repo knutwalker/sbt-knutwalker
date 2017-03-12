@@ -26,7 +26,8 @@ object KScalaFlags {
 
   private def scalacFlags(scala: ScalaMainVersion, experimental: Boolean) = {
     val specificFlags = scala match {
-      case Scala211 | Scala212 ⇒ flagsFor11
+      case Scala211 ⇒ flagsFor11
+      case Scala212 ⇒ flagsFor12
       case _ ⇒ flagsFor10
     }
     val otherFlags = if (experimental) experimentalFlags else Seq()
@@ -34,16 +35,26 @@ object KScalaFlags {
   }
 
   private def flagsFor10 = Seq(
-    "-Xlint"
+    "-Xlint",
+    "-Yclosure-elim",
+    "-Ydead-code"
   )
 
   private def flagsFor11 = Seq(
     "-Xlint:_",
     "-Yconst-opt",
-    "-Ywarn-infer-any"
+    "-Ywarn-infer-any",
+    "-Yclosure-elim",
+    "-Ydead-code"
     // unused reports are too aggressive, imho
     // "-Ywarn-unused",
     // "-Ywarn-unused-import"
+  )
+
+  private def flagsFor12 = Seq(
+    "-Xlint:_",
+    "-Ywarn-infer-any",
+    "opt:l:project"
   )
 
   private def universalFlags = Seq(
@@ -55,8 +66,6 @@ object KScalaFlags {
     "-unchecked",
     "-Xfatal-warnings",
     "-Xfuture",
-    "-Yclosure-elim",
-    "-Ydead-code",
     "-Yno-adapted-args",
     "-Ywarn-adapted-args",
     "-Ywarn-dead-code",
