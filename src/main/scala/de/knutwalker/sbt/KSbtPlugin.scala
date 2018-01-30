@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2017 Paul Horn
+ * Copyright 2015 - 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.typesafe.sbt.site.SitePlugin.{autoImport => site, projectSettings => 
 import com.typesafe.sbt.git.JGit
 import com.typesafe.tools.mima.plugin.MimaKeys.mimaPreviousArtifacts
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{createHeaders, headers}
+import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{headerCreate, headerLicense}
 import sbtassembly.AssemblyKeys._
 import sbtdocker.DockerKeys._
 import sbtdocker.{Dockerfile, ImageName}
@@ -34,7 +34,8 @@ import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Version
 import sbtunidoc.{ScalaUnidocPlugin, UnidocKeys}
 import spray.revolver.RevolverPlugin.autoImport.{reStart, reStatus, reStop}
-import tut.Plugin._
+import tut.TutPlugin.autoImport.{tut => tutKey, _}
+import _root_.tut.TutPlugin
 
 
 object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
@@ -43,8 +44,8 @@ object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
 
   object autoImport extends KSbtKeys {
     lazy val dontRelease: Seq[Def.Setting[_]] = List(
-              publish := (),
-         publishLocal := (),
+              publish := (()),
+         publishLocal := (()),
       publishArtifact := false
     )
 
@@ -66,15 +67,15 @@ object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
       val apiFolder = settingKey[String]("subdirectory of api folder")
       val tutFolder = settingKey[String]("subdirectory of tut folder")
       val dataFolder = settingKey[String]("subdirectory of data folder")
-      ScalaUnidocPlugin.projectSettings ++ siteSettings ++ GhpagesPlugin.projectSettings ++ tutSettings ++ dontRelease ++ Seq(
+      ScalaUnidocPlugin.projectSettings ++ siteSettings ++ GhpagesPlugin.projectSettings ++ TutPlugin.projectSettings ++ dontRelease ++ Seq(
         apiFolder := "api", tutFolder := "tut", dataFolder := "_data",
         tutSourceDirectory := sourceDirectory.value / "tut",
-        buildReadmeContent := tut.value,
+        buildReadmeContent := tutKey.value,
         readmeFile := baseDirectory.value / ".." / "README.md",
         readmeCommitMessage := "Update README",
         unidocProjectFilter in (ScalaUnidocPlugin.autoImport.ScalaUnidoc, unidoc) := inProjects(projects: _*),
         site.addMappingsToSiteDir(mappings in (ScalaUnidocPlugin.autoImport.ScalaUnidoc, packageDoc), apiFolder),
-        site.addMappingsToSiteDir(tut, tutFolder),
+        site.addMappingsToSiteDir(tutKey, tutFolder),
         site.addMappingsToSiteDir(genModules, dataFolder),
         ghpagesNoJekyll := false,
         scalacOptions in (ScalaUnidocPlugin.autoImport.ScalaUnidoc, unidoc) ++= Seq(
@@ -87,8 +88,13 @@ object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
         ),
         git.remoteRepo := githubProject.value.remoteSsh,
         includeFilter in site.makeSite ~= (_ || "*.yml" || "*.md" || "*.scss"),
-        tutScalacOptions ~= (_.filterNot(Set("-Xfatal-warnings", "-Ywarn-unused-import", "-Ywarn-dead-code"))),
-        watchSources <++= (tutSourceDirectory, site.siteSourceDirectory, includeFilter in site.makeSite) map { (t, s, f) ⇒ (t ** "*.md").get ++ (s ** f).get }
+        scalacOptions in Tut ~= (_.filterNot(Set("-Xfatal-warnings", "-Ywarn-unused-import", "-Ywarn-dead-code"))),
+        watchSources ++= {
+          val t = tutSourceDirectory.value
+          val s = site.siteSourceDirectory.value
+          val f = (includeFilter in site.makeSite).value
+          (t ** "*.md").get ++ (s ** f).get
+        }
       )
     }
 
@@ -113,7 +119,7 @@ object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
       name                         := projectName.value,
       applicationPorts             := Seq(),
       applicationJavaOpts          := Seq(),
-      docker                      <<= (docker dependsOn assembly),
+      docker                       := (docker dependsOn assembly).value,
       imageNames in docker := {
         val base = ImageName(
           registry = None,
@@ -227,7 +233,9 @@ object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
     inConfig(Test)(headerSettings)
 
   lazy val headerSettings = Seq(
-    compile := compile.dependsOn(createHeaders).value,
-    headers <<= (startYear, maintainer) apply headerConfig
+    compile := compile.dependsOn(headerCreate).value,
+    headerLicense := {
+      headerConfig(startYear.value, maintainer.value)
+    }
   )
 }

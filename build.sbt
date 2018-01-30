@@ -1,16 +1,18 @@
-import de.heikoseeberger.sbtheader.license.Apache2_0
 
 enablePlugins(AutomateHeaderPlugin, GitVersioning, GitBranchPrompt)
 sbtPlugin := true
 
+val sbtVersion_ = "1.1.0"
+sbtVersion := sbtVersion_
+crossSbtVersions := List(sbtVersion_)
+scalaVersion := "2.12.4"
 git.baseVersion := "0.5.1"
 organization := "de.knutwalker"
 
 name := "sbt-knutwalker"
 description := "Opinionated meta plugin for github based open source projects"
 
-licenses := List("Apache 2.0" → url("https://www.apache.org/licenses/LICENSE-2.0.html"))
-headers := Map("scala" -> Apache2_0("2015 – 2017", "Paul Horn"))
+headerLicense := Some(HeaderLicense.ALv2("2015 - 2017", "Paul Horn"))
 
 scalacOptions ++= List(
   "-unchecked",
@@ -19,7 +21,6 @@ scalacOptions ++= List(
   "-Xfuture",
   "-Xfatal-warnings",
   "-language:_",
-  "-target:jvm-1.6",
   "-encoding", "UTF-8")
 libraryDependencies ++= List(
   "org.specs2"                 %% "specs2-core"               % "3.8.9"  % "test",
@@ -31,19 +32,19 @@ libraryDependencies ++= List(
     exclude("org.specs2", s"specs2-scalacheck${scalaBinaryVersion.value}"))
 
 
-addSbtPlugin("com.eed3si9n"       % "sbt-assembly"    % "0.14.4")
-addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"   % "0.6.1")
+addSbtPlugin("com.eed3si9n"       % "sbt-assembly"    % "0.14.6")
+addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"   % "0.7.0")
 addSbtPlugin("se.marcuslonnberg"  % "sbt-docker"      % "1.4.1")
-addSbtPlugin("com.typesafe.sbt"   % "sbt-ghpages"     % "0.6.0")
-addSbtPlugin("com.typesafe.sbt"   % "sbt-git"         % "0.8.5")
-addSbtPlugin("de.heikoseeberger"  % "sbt-header"      % "1.8.0")
-addSbtPlugin("pl.project13.scala" % "sbt-jmh"         % "0.2.21")
-addSbtPlugin("com.typesafe"       % "sbt-mima-plugin" % "0.1.14")
-addSbtPlugin("com.typesafe.sbt"   % "sbt-site"        % "1.2.0")
-addSbtPlugin("com.jsuereth"       % "sbt-pgp"         % "1.0.0")
-addSbtPlugin("com.github.gseitz"  % "sbt-release"     % "1.0.4")
-addSbtPlugin("io.spray"           % "sbt-revolver"    % "0.8.0")
-addSbtPlugin("org.tpolecat"       % "tut-plugin"      % "0.4.2")
-addSbtPlugin("org.scoverage"      % "sbt-scoverage"   % "1.5.0")
-addSbtPlugin("org.xerial.sbt"     % "sbt-sonatype"    % "1.1")
-addSbtPlugin("com.eed3si9n"       % "sbt-unidoc"      % "0.4.0")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-ghpages"     % "0.6.2")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-git"         % "0.9.3")
+addSbtPlugin("de.heikoseeberger"  % "sbt-header"      % "4.1.0")
+addSbtPlugin("pl.project13.scala" % "sbt-jmh"         % "0.3.3")
+addSbtPlugin("com.typesafe"       % "sbt-mima-plugin" % "0.1.18")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-site"        % "1.3.1")
+addSbtPlugin("com.jsuereth"       % "sbt-pgp"         % "1.1.0")
+addSbtPlugin("com.github.gseitz"  % "sbt-release"     % "1.0.7")
+addSbtPlugin("io.spray"           % "sbt-revolver"    % "0.9.1")
+addSbtPlugin("org.tpolecat"       % "tut-plugin"      % "0.6.2")
+addSbtPlugin("org.scoverage"      % "sbt-scoverage"   % "1.5.1")
+addSbtPlugin("org.xerial.sbt"     % "sbt-sonatype"    % "2.1")
+addSbtPlugin("com.eed3si9n"       % "sbt-unidoc"      % "0.4.1")

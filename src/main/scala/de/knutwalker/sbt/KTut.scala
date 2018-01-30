@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2017 Paul Horn
+ * Copyright 2015 - 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import sbtrelease.Vcs
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
+import scala.sys.process.ProcessLogger
 
 
 object KTut {
@@ -124,10 +125,11 @@ object KTut {
   } yield ff
 
   private def tryCommit(message: String, vcs: Vcs, file: File, relative: String, log: Logger): Option[File] = {
-    vcs.add(relative) !! log
+    val processLog = ProcessLogger(message => log.info(message))
+    vcs.add(relative) !! processLog
     val status = vcs.status.!!.trim
     if (status.nonEmpty) {
-      vcs.commit(message, sign = true) ! log
+      vcs.commit(message, sign = true) ! processLog
       Some(file)
     } else {
       None
