@@ -35,7 +35,7 @@ import sbtrelease.Version
 import sbtunidoc.{ScalaUnidocPlugin, UnidocKeys}
 import spray.revolver.RevolverPlugin.autoImport.{reStart, reStatus, reStop}
 import tut.TutPlugin.autoImport.{tut => tutKey, _}
-import _root_.tut.TutPlugin
+import tut.TutPlugin
 
 
 object KSbtPlugin extends AutoPlugin with UnidocKeys with GhpagesKeys {
