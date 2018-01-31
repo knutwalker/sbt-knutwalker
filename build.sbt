@@ -23,11 +23,11 @@ scalacOptions ++= List(
   "-language:_",
   "-encoding", "UTF-8")
 libraryDependencies ++= List(
-  "org.specs2"                 %% "specs2-core"               % "3.8.9"  % "test",
-  "org.specs2"                 %% "specs2-scalacheck"         % "3.8.9"  % "test",
-  "org.scalacheck"             %% "scalacheck"                % "1.5"    % "test",
-  "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.4"  % "test",
-  "org.typelevel"              %% "scalaz-specs2"             % "0.5.0"  % "test"
+  "org.specs2"                 %% "specs2-core"               % "4.0.2"  % "test",
+  "org.specs2"                 %% "specs2-scalacheck"         % "4.0.2"  % "test",
+  "org.scalacheck"             %% "scalacheck"                % "1.13.5" % "test",
+  "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.8"  % "test",
+  "org.typelevel"              %% "scalaz-specs2"             % "0.5.2"  % "test"
     exclude("org.specs2", s"specs2-core${scalaBinaryVersion.value}")
     exclude("org.specs2", s"specs2-scalacheck${scalaBinaryVersion.value}"))
 
