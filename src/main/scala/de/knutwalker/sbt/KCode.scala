@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2017 Paul Horn
+ * Copyright 2015 - 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package de.knutwalker.sbt
 
-import de.heikoseeberger.sbtheader.license.Apache2_0
-import sbt.{ Project, State }
+import sbt.{Project, State}
 import sbtrelease.Version
 import com.typesafe.sbt.git.JGit
+import de.heikoseeberger.sbtheader.License
+import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.HeaderLicense
 
 import scala.xml.{Node => XNode, NodeSeq => XNodeSeq}
-import scala.xml.transform.{ RuleTransformer, RewriteRule }
+import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 object KCode extends VersionOrdering {
   private[this] val removeScoverageFromPom = new RewriteRule {
@@ -35,12 +36,10 @@ object KCode extends VersionOrdering {
     new RuleTransformer(removeScoverageFromPom)
 
 
-  def headerConfig(year: Option[Int], maintainer: String) = {
+  def headerConfig(year: Option[Int], maintainer: String): Option[License] = {
     val thisYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
     val years = List(year.getOrElse(thisYear), thisYear).distinct.mkString(" – ")
-    Map("java"  -> Apache2_0(years, maintainer),
-        "scala" -> Apache2_0(years, maintainer),
-        "conf"  -> Apache2_0(years, maintainer, "#"))
+    Some(HeaderLicense.ALv2(years, maintainer))
   }
 
   def sbtDevelopers(sbtv: String, devs: Seq[Developer]): List[sbt.Developer] = {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2017 Paul Horn
+ * Copyright 2015 - 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ object KReleaseSteps {
   lazy val inquireVersions = ReleaseStep { st: State ⇒
     val extracted = Project.extract(st)
     val lastVer = extracted.get(KSbtKeys.latestVersionTag).getOrElse("0.0.0")
-    val bump = extracted.get(releaseVersionBump)
+    val (newState, bump) = extracted.runTask(releaseVersionBump, st)
     val suggestedVersion = Version(lastVer).map(_.withoutQualifier.bump(bump).string).getOrElse(versionFormatError)
     val releaseVersion = readVersion(suggestedVersion, "Release version [%s] : ")
-    st.put(ReleaseKeys.versions, (releaseVersion, releaseVersion))
+    newState.put(ReleaseKeys.versions, (releaseVersion, releaseVersion))
   }
 
   lazy val setReleaseVersion = ReleaseStep { st: State =>
@@ -43,12 +43,12 @@ object KReleaseSteps {
   }
 
   lazy val publishSignedArtifacts = ReleaseStep(
-    action = Command.process("publishSigned", _),
+    action = releaseStepCommand("publishSigned"),
     enableCrossBuild = true
   )
 
   lazy val releaseToCentral = ReleaseStep(
-    action = Command.process("sonatypeReleaseAll", _),
+    action = releaseStepCommand("sonatypeReleaseAll"),
     enableCrossBuild = true
   )
 
