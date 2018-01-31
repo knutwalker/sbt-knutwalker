@@ -14,52 +14,52 @@ me there, you might benefit from this plugin, too.
 
 As a meta-plugin, the following plugins are automatically included (alphabetical order)
 
-- [sbt-assembly](https://github.com/sbt/sbt-assembly) 0.14.4
+- [sbt-assembly](https://github.com/sbt/sbt-assembly) 0.14.6
   Build fat-jars for your application
 
-- [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) 0.6.1
+- [sbt-buildinfo](https://github.com/sbt/sbt-buildinfo) 0.7.0
   Generate code based on your `build.sbt`
   
 - [sbt-docker](https://github.com/marcuslonnberg/sbt-docker) 1.4.1
   Generate docker images for your application
   
-- [sbt-ghpages](https://github.com/sbt/sbt-ghpages) 0.6.0
+- [sbt-ghpages](https://github.com/sbt/sbt-ghpages) 0.6.2
   Push documentation and static content to github pages
   
-- [sbt-git](https://github.com/sbt/sbt-git) 0.8.5
+- [sbt-git](https://github.com/sbt/sbt-git) 0.9.3
   Versioning based on git
 
-- [sbt-header](https://github.com/sbt/sbt-header) 1.8.0
+- [sbt-header](https://github.com/sbt/sbt-header) 4.1.0
   For creating and maintaining license headers
 
-- [sbt-jmh](https://github.com/ktoso/sbt-jmh) 0.2.21
+- [sbt-jmh](https://github.com/ktoso/sbt-jmh) 0.3.3
   Trust no one, bench everything
   
-- [sbt-mima-plugin](https://github.com/typesafehub/migration-manager/wiki/Sbt-plugin) 0.1.14
+- [sbt-mima-plugin](https://github.com/typesafehub/migration-manager/wiki/Sbt-plugin) 0.1.18
   Check for binary compability
 
-- [sbt-pgp](https://github.com/sbt/sbt-pgp) 1.0.0
+- [sbt-pgp](https://github.com/sbt/sbt-pgp) 1.1.0
   For signing artifacts when publishing to sonatype
 
-- [sbt-release](https://github.com/sbt/sbt-release) 1.0.4
+- [sbt-release](https://github.com/sbt/sbt-release) 1.0.7
   Provides a customizable workflow for releases
 
-- [sbt-revolver](https://github.com/spray/sbt-revolver) 0.8.0
+- [sbt-revolver](https://github.com/spray/sbt-revolver) 0.9.1
   quickly restart your application
 
-- [sbt-sonatype](https://github.com/xerial/sbt-sonatype) 1.1
+- [sbt-sonatype](https://github.com/xerial/sbt-sonatype) 2.1
   Provides support for Sonatype
 
-- [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.5.0
+- [sbt-scoverage](https://github.com/scoverage/sbt-scoverage) 1.5.1
   For running statement and branch coverage
 
-- [sbt-site](https://github.com/sbt/sbt-site) 1.2.0
+- [sbt-site](https://github.com/sbt/sbt-site) 1.3.1
   Generate static content for documentation (and github pages)
   
-- [tut-plugin](https://github.com/tpolecat/tut) 0.4.2
+- [tut-plugin](https://github.com/tpolecat/tut) 0.6.2
   Compile and check your documentation
   
-- [sbt-unidoc](https://github.com/sbt/sbt-unidoc) 0.4.0
+- [sbt-unidoc](https://github.com/sbt/sbt-unidoc) 0.4.1
   Generate unified documentation across multiple projects
 
 Not all of these are configured (e.g. docker), they're just included so you don't
@@ -76,18 +76,25 @@ Further, these things are provided or simplified
 - more aggresive resolver caching to avoid [repeated resolving...](https://twitter.com/datazenit/status/585540351978536962/photo/1)
 
 
-## Requirements
+## Installation
 
-- sbt 0.13.8
-- Java 7
-
-## Usage
+### sbt 0.13
 
 Add the folling to you `project/plugins.sbt`
 
 ```scala
 addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.5.1")
 ```
+
+### sbt 1.0
+
+Add the folling to you `project/plugins.sbt`
+
+```scala
+addSbtPlugin("de.knutwalker" % "sbt-knutwalker" % "0.6.0")
+```
+
+## Usage
 
 The following keys should be used to activate various features and simplicifications
 
